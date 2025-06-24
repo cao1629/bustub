@@ -23,12 +23,16 @@ auto HeaderPage::InsertRecord(const std::string &name, const page_id_t root_id) 
   assert(name.length() < 32);
   assert(root_id > INVALID_PAGE_ID);
 
+  // reinterpret_cast<int *>(GetData())
   int record_num = GetRecordCount();
+
   int offset = 4 + record_num * 36;
+
   // check for duplicate name
   if (FindRecord(name) != -1) {
     return false;
   }
+
   // copy record content
   memcpy(GetData() + offset, name.c_str(), (name.length() + 1));
   memcpy((GetData() + offset + 32), &root_id, 4);

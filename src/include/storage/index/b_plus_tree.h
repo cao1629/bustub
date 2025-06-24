@@ -80,6 +80,7 @@ class BPlusTree {
 
   auto FindLeaf(const KeyType &key, Operation operation, Transaction *transaction = nullptr, bool leftMost = false,
                 bool rightMost = false) -> Page *;
+
   void ReleaseLatchFromQueue(Transaction *transaction);
 
  private:
@@ -92,26 +93,45 @@ class BPlusTree {
 
   void StartNewTree(const KeyType &key, const ValueType &value);
 
+  // this leaf page's write latch is already acquired before this function is called
+  // Insert: FindLeaf -> InsertIntoLeaf
   auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr) -> bool;
 
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                         Transaction *transaction = nullptr);
 
+  // why template?
+  // N could be LeafPage or InternalPage
+  // Now we have a page to split. We split it into two pages, update the parent and then return the new page.
   template <typename N>
   auto Split(N *node) -> N *;
 
   template <typename N>
   auto CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr) -> bool;
 
+  // Two pages are coalesced into one page. Their parent page will lose one key.
+  // "neighbor_node" is on the left of "node"
+  // We move all keys and values from "node" to "neighbor_node".
+  // parent[index] points to "node". We will remove this entry from "parent".
+  // Since we delete one entry from "parent", we need to check whether we need to coalesce or redistribute the parent page.
   template <typename N>
   auto Coalesce(N *neighbor_node, N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent, int index,
                 Transaction *transaction = nullptr) -> bool;
 
+  // "node" hits the minimum size. We need to move one key and value from "neighbor_node" to "node".
+  // "from_prev" indicates whether the entry is moved from the previous node or next node.
+  // parent[index] points to "node"
+  // Since we will not delete any entry from "parent", unlike Coalesce() we do not need to
+  // check whether we need to coalesce or redistribute the parent page.
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent,
                     int index, bool from_prev);
 
+  // This node is the root node. We probably need to adjust it.
+  // If the root node has only one child, we replace the root node with its only child.
+  // If the root node is empty, we set the root page id to INVALID_PAGE_ID. We need to delete the old root page later.
   auto AdjustRoot(BPlusTreePage *node) -> bool;
+
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
@@ -119,6 +139,8 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+
+  // Synchronization for root page id
   ReaderWriterLatch root_page_id_latch_;
 };
 

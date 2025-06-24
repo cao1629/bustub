@@ -64,14 +64,22 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const ->
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType {
+  // why array_+1?
+  // because the first key is always invalid, so we start searching from the second element
   auto target = std::lower_bound(array_ + 1, array_ + GetSize(), key,
                                  [&comparator](const auto &pair, auto k) { return comparator(pair.first, k) < 0; });
+
+  // key is larger than all keys in the internal page
+  // return the last value
   if (target == array_ + GetSize()) {
     return ValueAt(GetSize() - 1);
   }
+
+
   if (comparator(target->first, key) == 0) {
     return target->second;
   }
+
   return std::prev(target)->second;
 }
 
@@ -107,10 +115,14 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient
   recipient->CopyNFrom(array_ + start_split_indx, original_size - start_split_indx, buffer_pool_manager);
 }
 
+
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager) {
+  // Copy is done at this point.
   std::copy(items, items + size, array_ + GetSize());
 
+  // Why do need to pass in the buffer pool manager?
+  // Internal pages have child pages, and we need to update the parent page of these child pages.
   for (int i = 0; i < size; i++) {
     auto page = buffer_pool_manager->FetchPage(ValueAt(i + GetSize()));
     auto *node = reinterpret_cast<BPlusTreePage *>(page->GetData());
@@ -137,6 +149,8 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() -> ValueType {
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                BufferPoolManager *buffer_pool_manager) {
+  // Now the first key of this internal page is empty. We are going to move all keys to the recipient page,
+  // so we set the first key of this internal page to "middle_key"
   SetKeyAt(0, middle_key);
   recipient->CopyNFrom(array_, GetSize(), buffer_pool_manager);
   SetSize(0);

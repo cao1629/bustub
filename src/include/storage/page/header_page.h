@@ -28,16 +28,21 @@ namespace bustub {
  */
 class HeaderPage : public Page {
  public:
+
   void Init() { SetRecordCount(0); }
+
   /**
    * Record related
    */
   auto InsertRecord(const std::string &name, page_id_t root_id) -> bool;
+
   auto DeleteRecord(const std::string &name) -> bool;
+
   auto UpdateRecord(const std::string &name, page_id_t root_id) -> bool;
 
   // return root_id if success
   auto GetRootId(const std::string &name, page_id_t *root_id) -> bool;
+
   auto GetRecordCount() -> int;
 
  private:
