@@ -45,16 +45,37 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   // After creating a new leaf page from buffer pool, must call initialize
   // method to set default values
   void Init(page_id_t page_id, page_id_t parent_id = INVALID_PAGE_ID, int max_size = LEAF_PAGE_SIZE);
+
   // helper methods
   auto GetNextPageId() const -> page_id_t;
   void SetNextPageId(page_id_t next_page_id);
   auto KeyAt(int index) const -> KeyType;
   auto GetItem(int index) -> const MappingType &;
+
+  // Use std::lower_bound to try to find the index of the key.
+  // If "key" is smaller than all keys in the page, return 0.
+  // If "key" is larger than all keys in the page, return the size of the page.
+  // Since we use std::lower_bound, we find the first key that is not less than "key". But we cannot guarantee that
+  // it is equal to "key".
   auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int;
+
+  // Insert ""key" and "value" into this leaf page.
+  // If "key" already exists, do nothing.
+  // We only do insertion in this method.
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &keyComparator) -> int;
+
+  // If "key" exists, store the value in "value" and return true.
+  // If "key" does not exist, return false.
   auto Lookup(const KeyType &key, ValueType *value, const KeyComparator &keyComparator) const -> bool;
+
+  // If "key" exists, remove it and return the new size of the page.
+  // If "key" does not exist, do nothing and return the current size of the page.
   auto RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &keyComparator) -> int;
 
+  // In these methods, the current leaf page and "recipient" have the same parent page.
+  // We only move entries around. We do not do other things in these methods.
+
+  // Move half of the entries to the end of "recipient".
   void MoveHalfTo(BPlusTreeLeafPage *recipient);
   void MoveAllTo(BPlusTreeLeafPage *recipient);
   void MoveFirstToEndOf(BPlusTreeLeafPage *recipient);

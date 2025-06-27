@@ -75,7 +75,6 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCompara
     return ValueAt(GetSize() - 1);
   }
 
-
   if (comparator(target->first, key) == 0) {
     return target->second;
   }

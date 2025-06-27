@@ -58,8 +58,13 @@ class Value {
   Value(TypeId type, int64_t i);
   // TIMESTAMP
   Value(TypeId type, uint64_t i);
-  // VARCHAR
+
+  // TypeId must be VARCHAR
+  // If manage_data_ is true, we allocate memory for value_.varlen_ and copy data into it.
   Value(TypeId type, const char *data, uint32_t len, bool manage_data);
+
+  // Allocate memory for "value_.varlen_" and copy data into it.
+  // Set manage_data_ to true, and free the memory we have allocated in the destructor.
   Value(TypeId type, const std::string &data);
 
   Value() : Value(TypeId::INVALID) {}
@@ -82,6 +87,7 @@ class Value {
 
   // Get the length of the variable length data
   inline auto GetLength() const -> uint32_t { return Type::GetInstance(type_id_)->GetLength(*this); }
+
   // Access the raw variable length data
   inline auto GetData() const -> const char * { return Type::GetInstance(type_id_)->GetData(*this); }
 
@@ -145,6 +151,7 @@ class Value {
   inline auto Copy() const -> Value { return Type::GetInstance(type_id_)->Copy(*this); }
 
  protected:
+
   // The actual value item
   union Val {
     int8_t boolean_;
@@ -159,11 +166,15 @@ class Value {
   } value_;
 
   union {
+    // If "value_.varlen_" is used, "len_" indicates the length of the variable-length data.
     uint32_t len_;
     TypeId elem_type_id_;
   } size_;
 
+  // If the type is VARCHAR, this member indicates whether this Value object manages "value_.varlen_".
+  // If true, the destructor will delete the allocated memory.
   bool manage_data_;
+
   // The data type
   TypeId type_id_;
 };

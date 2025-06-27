@@ -21,10 +21,13 @@ BPLUSTREE_INDEX_TYPE::BPlusTreeIndex(std::unique_ptr<IndexMetadata> &&metadata, 
       comparator_(GetMetadata()->GetKeySchema()),
       container_(GetMetadata()->GetName(), buffer_pool_manager, comparator_) {}
 
+
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_INDEX_TYPE::InsertEntry(const Tuple &key, RID rid, Transaction *transaction) {
   // construct insert index key
   KeyType index_key;
+
+  // create a GenericKey object from the Tuple key
   index_key.SetFromKey(key);
 
   container_.Insert(index_key, rid, transaction);

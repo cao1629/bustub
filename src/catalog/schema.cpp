@@ -22,11 +22,13 @@ Schema::Schema(const std::vector<Column> &columns) {
   uint32_t curr_offset = 0;
   for (uint32_t index = 0; index < columns.size(); index++) {
     Column column = columns[index];
+
     // handle uninlined column
     if (!column.IsInlined()) {
       tuple_is_inlined_ = false;
       uninlined_columns_.push_back(index);
     }
+
     // set column offset
     column.column_offset_ = curr_offset;
     curr_offset += column.GetFixedLength();
@@ -34,6 +36,7 @@ Schema::Schema(const std::vector<Column> &columns) {
     // add column
     this->columns_.push_back(column);
   }
+
   // set tuple length
   length_ = curr_offset;
 }

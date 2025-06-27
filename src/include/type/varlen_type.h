@@ -52,9 +52,12 @@ class VarlenType : public Type {
   auto ToString(const Value &val) const -> std::string override;
 
   // Serialize this value into the given storage space
+  // len_: length of the variable length data (4 bytes)
+  // len bytes of actual data
   void SerializeTo(const Value &val, char *storage) const override;
 
-  // Deserialize a value of the given type from the given storage space.
+  // storage = len + data
+  // Deserialize data from "storage" and return a Value object. (varlen_, len_)
   auto DeserializeFrom(const char *storage) const -> Value override;
 
   // Create a copy of this value

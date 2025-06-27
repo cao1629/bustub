@@ -46,6 +46,7 @@ auto VarlenType::GetData(const Value &val) const -> const char * { return val.va
 // Get the length of the variable length data (including the length field)
 auto VarlenType::GetLength(const Value &val) const -> uint32_t { return val.size_.len_; }
 
+
 auto VarlenType::CompareEquals(const Value &left, const Value &right) const -> CmpBool {
   assert(left.CheckComparable(right));
   if (left.IsNull() || right.IsNull()) {
@@ -57,6 +58,7 @@ auto VarlenType::CompareEquals(const Value &left, const Value &right) const -> C
 
   VARLEN_COMPARE_FUNC(==);  // NOLINT
 }
+
 
 auto VarlenType::CompareNotEquals(const Value &left, const Value &right) const -> CmpBool {
   assert(left.CheckComparable(right));

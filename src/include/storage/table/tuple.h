@@ -55,10 +55,13 @@ class Tuple {
     allocated_ = false;
     data_ = nullptr;
   }
-  // serialize tuple data
+
+  // Serialize tuple data
+  // Convert size_ and data_ into a byte array and then copy it to "storage".
   void SerializeTo(char *storage) const;
 
-  // deserialize tuple data(deep copy)
+  // Deserialize tuple data(deep copy)
+  // Read size_ and data_ from "storage".
   void DeserializeFrom(const char *storage);
 
   // return RID of current tuple
@@ -67,11 +70,12 @@ class Tuple {
   // Get the address of this tuple in the table's backing store
   inline auto GetData() const -> char * { return data_; }
 
-  // Get length of the tuple, including varchar legth
+  // Get length of the tuple, including varchar length
   inline auto GetLength() const -> uint32_t { return size_; }
 
   // Get the value of a specified column (const)
   // checks the schema to see how to return the Value.
+  // Now we have a tuple. Given a schema and a column index, this method returns the Value of that column.
   auto GetValue(const Schema *schema, uint32_t column_idx) const -> Value;
 
   // Generates a key tuple given schemas and attributes
@@ -82,6 +86,7 @@ class Tuple {
     Value value = GetValue(schema, column_idx);
     return value.IsNull();
   }
+
   inline auto IsAllocated() -> bool { return allocated_; }
 
   auto ToString(const Schema *schema) const -> std::string;
@@ -90,9 +95,16 @@ class Tuple {
   // Get the starting storage address of specific column
   auto GetDataPtr(const Schema *schema, uint32_t column_idx) const -> const char *;
 
-  bool allocated_{false};  // is allocated?
-  RID rid_{};              // if pointing to the table heap, the rid is valid
+  // Indicates if memory is allocated for this tuple
+  // If true, delete[] data_ in the destructor/
+  bool allocated_{false};
+
+  // if pointing to the table heap, the rid is valid
+  RID rid_{};
+
+  // How many bytes are used in this tuple
   uint32_t size_{0};
+
   char *data_{nullptr};
 };
 

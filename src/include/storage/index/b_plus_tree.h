@@ -94,15 +94,17 @@ class BPlusTree {
   void StartNewTree(const KeyType &key, const ValueType &value);
 
   // this leaf page's write latch is already acquired before this function is called
-  // Insert: FindLeaf -> InsertIntoLeaf
   auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr) -> bool;
 
+  // After one page is split, we now have two pages, "old_node" on the left and "new_node" on the right.
+  // In "new_node", the first key is the key we want to insert into the parent page. But we will not use
+  // this key in "new_node" because in an internal page, we ignore the first key.
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                         Transaction *transaction = nullptr);
 
-  // why template?
-  // N could be LeafPage or InternalPage
-  // Now we have a page to split. We split it into two pages, update the parent and then return the new page.
+  // why template? N could be LeafPage or InternalPage
+  // Now we have a page to split. We split it into two pages (this page is on the left, the new page is on the right),
+  // update the parent and then return the new page.
   template <typename N>
   auto Split(N *node) -> N *;
 
@@ -111,7 +113,7 @@ class BPlusTree {
 
   // Two pages are coalesced into one page. Their parent page will lose one key.
   // "neighbor_node" is on the left of "node"
-  // We move all keys and values from "node" to "neighbor_node".
+  // We move all the keys and values from "node" to "neighbor_node".
   // parent[index] points to "node". We will remove this entry from "parent".
   // Since we delete one entry from "parent", we need to check whether we need to coalesce or redistribute the parent page.
   template <typename N>
@@ -129,7 +131,7 @@ class BPlusTree {
 
   // This node is the root node. We probably need to adjust it.
   // If the root node has only one child, we replace the root node with its only child.
-  // If the root node is empty, we set the root page id to INVALID_PAGE_ID. We need to delete the old root page later.
+  // If the root node is empty, we set the root page id to INVALID_PAGE_ID. We need to delete this old root page later.
   auto AdjustRoot(BPlusTreePage *node) -> bool;
 
   // member variable

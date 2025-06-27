@@ -131,12 +131,17 @@ class Column {
   TypeId column_type_;
 
   /** For a non-inlined column, this is the size of a pointer. Otherwise, the size of the fixed length column. */
+  // All types except VARCHAR are inlined.
+  // For VARCHAR, fixed_length_ is 12 bytes
   uint32_t fixed_length_;
 
   /** For an inlined column, 0. Otherwise, the length of the variable length column. */
+  // For VARCHAR,
   uint32_t variable_length_{0};
 
   /** Column offset in the tuple. */
+  // We do not know the offset of a column until we have a schema.
+  // This field is set in Schema's constructor.
   uint32_t column_offset_{0};
 };
 

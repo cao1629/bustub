@@ -65,11 +65,13 @@ INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
   root_page_id_latch_.WLock();
   transaction->AddIntoPageSet(nullptr);  // nullptr means root_page_id_latch_
+
   if (IsEmpty()) {
     StartNewTree(key, value);
     ReleaseLatchFromQueue(transaction);
     return true;
   }
+
   return InsertIntoLeaf(key, value, transaction);
 }
 
@@ -94,14 +96,15 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
 
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
+  // Go down to the leaf page where we should insert the key-value pair.
   auto leaf_page = FindLeaf(key, Operation::INSERT, transaction);
   auto *node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
 
+  // Insert the key-value pair into the leaf page.
   auto size = node->GetSize();
   auto new_size = node->Insert(key, value, comparator_);
 
-  // after insertion, the size of this leaf page has not changed
-  // duplicate key
+  // The size of this leaf page has not changed after insertion, which means "key" already exists and we do nothing.
   if (new_size == size) {
     ReleaseLatchFromQueue(transaction);
     leaf_page->WUnlatch();
@@ -117,11 +120,13 @@ auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     return true;
   }
 
-  // new_size >= leaf_max_size_: leaf is full, need to split
+  // The size of this leaf page reaches the maximum size, we need to split it.
   auto sibling_leaf_node = Split(node);
   sibling_leaf_node->SetNextPageId(node->GetNextPageId());
   node->SetNextPageId(sibling_leaf_node->GetPageId());
 
+  // Since we split one page into two pages, and these two pages have the same parent page, so we need
+  // to insert one entry into the parent page.
   auto risen_key = sibling_leaf_node->KeyAt(0);
   InsertIntoParent(node, risen_key, sibling_leaf_node, transaction);
 
@@ -165,6 +170,7 @@ auto BPLUSTREE_TYPE::Split(N *node) -> N * {
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                                       Transaction *transaction) {
+  // "old_node" was the root page, we need to create a new root page.
   if (old_node->IsRootPage()) {
     // now we need to create a new root page
     auto page = buffer_pool_manager_->NewPage(&root_page_id_);
@@ -237,7 +243,6 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
     ReleaseLatchFromQueue(transaction);
     return;
   }
-
 
   auto leaf_page = FindLeaf(key, Operation::DELETE, transaction);
   auto *node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
@@ -374,6 +379,9 @@ auto BPLUSTREE_TYPE::Coalesce(N *neighbor_node, N *node,
 
   auto middle_key = parent->KeyAt(index);
 
+  // Why we need to check whether the node is a leaf page or an internal page?
+  // If we move keys from one leaf page to another leaf page, we do not need to update their children's parent page id.
+  // If we move keys from one internal page to another internal page, we do.
   if (node->IsLeafPage()) {
     auto *leaf_node = reinterpret_cast<LeafPage *>(node);
     auto *prev_leaf_node = reinterpret_cast<LeafPage *>(neighbor_node);
@@ -426,7 +434,6 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node,
     }
   }
 }
-
 
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) -> bool {

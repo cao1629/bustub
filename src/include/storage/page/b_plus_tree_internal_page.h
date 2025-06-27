@@ -48,6 +48,8 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void SetValueAt(int index, const ValueType &value);
 
   // Given a value, return the index of the value in this internal page.
+  // We use std::find_if to find the index of "value".
+  // When we call this function, we assume that "value" is in this internal page.
   auto ValueIndex(const ValueType &value) const -> int;
 
   // Which path to take when searching for a key
@@ -56,7 +58,7 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   // InsertIntoParent -> PopulateNewRoot
   void PopulateNewRoot(const ValueType &old_value, const KeyType &new_key, const ValueType &new_value);
 
-  // insert a key-value pair after a key-value pair
+  // Given a value, find the index of this value and then insert a new key-value pair after it.
   auto InsertNodeAfter(const ValueType &old_value, const KeyType &new_key, const ValueType &new_value) -> int;
 
   void Remove(int index);

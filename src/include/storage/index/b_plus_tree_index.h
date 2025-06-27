@@ -30,6 +30,7 @@ class BPlusTreeIndex : public Index {
 
   BPlusTreeIndex(std::unique_ptr<IndexMetadata> &&metadata, BufferPoolManager *buffer_pool_manager);
 
+  // First create a GenericKey object from the Tuple key, then insert (GenericKey, RID) pair into the B+ tree.
   void InsertEntry(const Tuple &key, RID rid, Transaction *transaction) override;
 
   void DeleteEntry(const Tuple &key, RID rid, Transaction *transaction) override;

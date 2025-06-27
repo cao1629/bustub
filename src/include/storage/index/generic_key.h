@@ -26,9 +26,11 @@ namespace bustub {
  * purposes, the actual size of which is specified and instantiated
  * with a template argument.
  */
+ // GenericKey is fixed size.
 template <size_t KeySize>
 class GenericKey {
  public:
+
   inline void SetFromKey(const Tuple &tuple) {
     // intialize to 0
     memset(data_, 0, KeySize);
@@ -40,6 +42,7 @@ class GenericKey {
     memset(data_, 0, KeySize);
     memcpy(data_, &key, sizeof(int64_t));
   }
+
 
   inline auto ToValue(Schema *schema, uint32_t column_idx) const -> Value {
     const char *data_ptr;

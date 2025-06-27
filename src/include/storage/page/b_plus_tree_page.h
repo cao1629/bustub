@@ -67,9 +67,15 @@ class BPlusTreePage {
   // member variable, attributes that both internal and leaf page share
   IndexPageType page_type_;
   lsn_t lsn_;
+
+  // how many key/value pairs are stored in this page
   int size_;
+
+  // when the page hits the maximum size, it will be split into two pages
   int max_size_;
+
   page_id_t parent_page_id_;
+
   page_id_t page_id_;
 };
 

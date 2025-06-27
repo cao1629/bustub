@@ -70,16 +70,20 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &keyComparator)
     -> int {
   auto distance_in_array = KeyIndex(key, keyComparator);
+
+  // "key" is larger than all keys in the page, we insert it at the end
   if (distance_in_array == GetSize()) {
     *(array_ + distance_in_array) = {key, value};
     IncreaseSize(1);
     return GetSize();
   }
 
+  // "key" already exists in the page, we do not insert it again
   if (keyComparator(array_[distance_in_array].first, key) == 0) {
     return GetSize();
   }
 
+  // We already find the first key that is larger than "key".
   std::move_backward(array_ + distance_in_array, array_ + GetSize(), array_ + GetSize() + 1);
   *(array_ + distance_in_array) = {key, value};
 
@@ -87,17 +91,21 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &val
   return GetSize();
 }
 
+
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   int start_split_indx = GetMinSize();
   SetSize(start_split_indx);
   recipient->CopyNFrom(array_ + start_split_indx, GetMaxSize() - start_split_indx);
 }
+
+
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   std::copy(items, items + size, array_ + GetSize());
   IncreaseSize(size);
 }
+
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &keyComparator) const
@@ -109,6 +117,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
   *value = array_[target_in_array].second;
   return true;
 }
+
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &keyComparator) -> int {

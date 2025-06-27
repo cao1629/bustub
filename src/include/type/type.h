@@ -89,6 +89,8 @@ class Type {
   virtual auto ToString(const Value &val) const -> std::string;
 
   // Serialize this value into the given storage space.
+  // For inlined types, the result is the value.
+  // For VARCHAR, the result is 4 bytes length of the string and a pointer to the data.
   virtual void SerializeTo(const Value &val, char *storage) const;
 
   // Deserialize a value of the given type from the given storage space.
@@ -103,6 +105,7 @@ class Type {
   virtual auto GetData(const Value &val) const -> const char *;
 
   // Get the length of the variable length data
+  // This method is only used for VARCHAR.
   virtual auto GetLength(const Value &val) const -> uint32_t;
 
   // Access the raw varlen data stored from the tuple storage
@@ -111,6 +114,7 @@ class Type {
  protected:
   // The actual type ID
   TypeId type_id_;
+
   // Singleton instances.
   static Type *k_types[14];
 };
