@@ -32,7 +32,7 @@ class GenericKey {
  public:
 
   inline void SetFromKey(const Tuple &tuple) {
-    // intialize to 0
+    // initialize to 0
     memset(data_, 0, KeySize);
     memcpy(data_, tuple.GetData(), tuple.GetLength());
   }
@@ -42,7 +42,6 @@ class GenericKey {
     memset(data_, 0, KeySize);
     memcpy(data_, &key, sizeof(int64_t));
   }
-
 
   inline auto ToValue(Schema *schema, uint32_t column_idx) const -> Value {
     const char *data_ptr;

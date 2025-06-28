@@ -317,6 +317,8 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
     }
 
     // We cannot redistribute with the left sibling, so we coalesce.
+    // After we coalesce two pages, the result page must be not full. Because we already know
+    // that the left sibling has minimum number of keys, and the current node has minimum number of keys.
     auto parent_node_should_delete = Coalesce(sibling_node, node, parent_node, idx, transaction);
 
     if (parent_node_should_delete) {
@@ -367,7 +369,9 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
     return false;
   }
 
-  // We cannot redistribute or coalesce with any sibling, so we keep this node.
+  // We cannot redistribute or coalesce with any sibling. This page does not have any siblings.
+  // Now the B+ Tree has two nodes, the root node and this node.
+  // We can not do either redistribute or coalesce, so we just return false.
   return false;
 }
 
@@ -381,7 +385,7 @@ auto BPLUSTREE_TYPE::Coalesce(N *neighbor_node, N *node,
 
   // Why we need to check whether the node is a leaf page or an internal page?
   // If we move keys from one leaf page to another leaf page, we do not need to update their children's parent page id.
-  // If we move keys from one internal page to another internal page, we do.
+  // If we move keys from one internal page to another internal page, we do need.
   if (node->IsLeafPage()) {
     auto *leaf_node = reinterpret_cast<LeafPage *>(node);
     auto *prev_leaf_node = reinterpret_cast<LeafPage *>(neighbor_node);

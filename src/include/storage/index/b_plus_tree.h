@@ -108,6 +108,9 @@ class BPlusTree {
   template <typename N>
   auto Split(N *node) -> N *;
 
+  // We probably need to coalesce or redistribute this page.
+  // If we need to delete this page later, we return true. Otherwise, we return false.
+  // Specifically, if we coalesce, we return true.
   template <typename N>
   auto CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr) -> bool;
 
@@ -116,6 +119,7 @@ class BPlusTree {
   // We move all the keys and values from "node" to "neighbor_node".
   // parent[index] points to "node". We will remove this entry from "parent".
   // Since we delete one entry from "parent", we need to check whether we need to coalesce or redistribute the parent page.
+  // Return value: the return value of CoalesceOrRedistribute(parent), which means whether we need to delete the parent page later.
   template <typename N>
   auto Coalesce(N *neighbor_node, N *node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent, int index,
                 Transaction *transaction = nullptr) -> bool;

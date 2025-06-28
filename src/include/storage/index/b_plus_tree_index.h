@@ -33,8 +33,13 @@ class BPlusTreeIndex : public Index {
   // First create a GenericKey object from the Tuple key, then insert (GenericKey, RID) pair into the B+ tree.
   void InsertEntry(const Tuple &key, RID rid, Transaction *transaction) override;
 
+  // First create a GenericKey object from the Tuple key, then remove (GenericKey, RID) pair from the B+ tree.
+  // We actually do not need "rid" here.
   void DeleteEntry(const Tuple &key, RID rid, Transaction *transaction) override;
 
+  // First create a GenericKey object from the Tuple key.
+  // Then search for the GenericKey in the B+ tree and return all RIDs associated with it.
+  // Since we only support unique keys, there should be at most one RID.
   void ScanKey(const Tuple &key, std::vector<RID> *result, Transaction *transaction) override;
 
   auto GetBeginIterator() -> INDEXITERATOR_TYPE;

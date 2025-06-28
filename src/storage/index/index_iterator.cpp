@@ -32,6 +32,7 @@ INDEXITERATOR_TYPE::~IndexIterator() {
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::IsEnd() -> bool {
+  // Now we are in the last leaf page, and the index is at the end of the leaf page
   return leaf_->GetNextPageId() == INVALID_PAGE_ID && index_ == leaf_->GetSize();
 }
 
@@ -40,6 +41,8 @@ auto INDEXITERATOR_TYPE::operator*() -> const MappingType & { return leaf_->GetI
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
+  // This leaf is not the last leaf page, and we are at the end of the current leaf page.
+  // We need to skip to the next leaf page.
   if (index_ == leaf_->GetSize() - 1 && leaf_->GetNextPageId() != INVALID_PAGE_ID) {
     auto next_page = buffer_pool_manager_->FetchPage(leaf_->GetNextPageId());
 
@@ -47,6 +50,7 @@ auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
     page_->RUnlatch();
     buffer_pool_manager_->UnpinPage(page_->GetPageId(), false);
 
+    // Skip to the first item in the next leaf page
     page_ = next_page;
     leaf_ = reinterpret_cast<LeafPage *>(page_->GetData());
     index_ = 0;
