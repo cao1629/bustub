@@ -92,6 +92,7 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
 
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
+  // Find the leaf page where the key should be inserted.
   auto leaf_page = FindLeaf(key, Operation::INSERT, transaction);
   auto *node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
 
@@ -119,6 +120,7 @@ auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   sibling_leaf_node->SetNextPageId(node->GetNextPageId());
   node->SetNextPageId(sibling_leaf_node->GetPageId());
 
+
   auto risen_key = sibling_leaf_node->KeyAt(0);
   InsertIntoParent(node, risen_key, sibling_leaf_node, transaction);
 
@@ -128,6 +130,7 @@ auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   return true;
 }
 
+// N: InternalPage or LeafPage
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 auto BPLUSTREE_TYPE::Split(N *node) -> N * {
@@ -158,6 +161,7 @@ auto BPLUSTREE_TYPE::Split(N *node) -> N * {
   return new_node;
 }
 
+// After splitting a page, we have old_node and new_node. We need to insert a new entry into their parent.
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                                       Transaction *transaction) {
@@ -183,15 +187,20 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     ReleaseLatchFromQueue(transaction);
     return;
   }
+
   auto parent_page = buffer_pool_manager_->FetchPage(old_node->GetParentPageId());
   auto *parent_node = reinterpret_cast<InternalPage *>(parent_page->GetData());
 
+  // ???  before insertion
   if (parent_node->GetSize() < internal_max_size_) {
     parent_node->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
     ReleaseLatchFromQueue(transaction);
     buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), true);
     return;
   }
+
+  // parent is full, need to split
+  // Why do we need temporary memory? Because a page cannot save max_size+1 items.
   auto *mem = new char[INTERNAL_PAGE_HEADER_SIZE + sizeof(MappingType) * (parent_node->GetSize() + 1)];
   auto *copy_parent_node = reinterpret_cast<InternalPage *>(mem);
   std::memcpy(mem, parent_page->GetData(), INTERNAL_PAGE_HEADER_SIZE + sizeof(MappingType) * (parent_node->GetSize()));
@@ -211,7 +220,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
  *****************************************************************************/
 /*
  * Delete key & value pair associated with input key
- * If current tree is empty, return immdiately.
+ * If current tree is empty, return immediately.
  * If not, User needs to first find the right leaf page as deletion target, then
  * delete entry from leaf page. Remember to deal with redistribute or merge if
  * necessary.
@@ -229,6 +238,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   auto leaf_page = FindLeaf(key, Operation::DELETE, transaction);
   auto *node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
 
+  // "key" does not exist in the leaf page
   if (node->GetSize() == node->RemoveAndDeleteRecord(key, comparator_)) {
     ReleaseLatchFromQueue(transaction);
     leaf_page->WUnlatch();
@@ -247,12 +257,16 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
 
   std::for_each(transaction->GetDeletedPageSet()->begin(), transaction->GetDeletedPageSet()->end(),
                 [&bpm = buffer_pool_manager_](const page_id_t page_id) { bpm->DeletePage(page_id); });
+
   transaction->GetDeletedPageSet()->clear();
 }
 
+// This page may need to coalesce or redistribute with its sibling. Maybe not.
+// If it really happens, return true. Otherwise, return false.
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -> bool {
+
   if (node->IsRootPage()) {
     auto root_should_delete = AdjustRoot(node);
     ReleaseLatchFromQueue(transaction);

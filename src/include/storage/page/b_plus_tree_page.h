@@ -66,9 +66,16 @@ class BPlusTreePage {
  private:
   // member variable, attributes that both internal and leaf page share
   IndexPageType page_type_;
+
+  // log sequence number, used for recovery
   lsn_t lsn_;
+
+  // number of key/value pairs in this page
   int size_;
+
+  // maximum number of key/value pairs in this page
   int max_size_;
+
   page_id_t parent_page_id_;
   page_id_t page_id_;
 };

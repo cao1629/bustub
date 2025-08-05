@@ -39,26 +39,42 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void Init(page_id_t page_id, page_id_t parent_id = INVALID_PAGE_ID, int max_size = INTERNAL_PAGE_SIZE);
 
   auto KeyAt(int index) const -> KeyType;
+
   void SetKeyAt(int index, const KeyType &key);
+
   auto ValueAt(int index) const -> ValueType;
+
   void SetValueAt(int index, const ValueType &value);
+
+  // index of a given value
+  // return the size of this page if not found
   auto ValueIndex(const ValueType &value) const -> int;
 
+  // We are now in an internal page. Given a key, find the child we should go down.
   auto Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType;
+
+  // new_key is the only key in the new root, old_value and new_value are the only two values
   void PopulateNewRoot(const ValueType &old_value, const KeyType &new_key, const ValueType &new_value);
+
   auto InsertNodeAfter(const ValueType &old_value, const KeyType &new_key, const ValueType &new_value) -> int;
+
   void Remove(int index);
+
   auto RemoveAndReturnOnlyChild() -> ValueType;
 
   void MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key, BufferPoolManager *buffer_pool_manager);
+
   void MoveHalfTo(BPlusTreeInternalPage *recipient, BufferPoolManager *buffer_pool_manager);
+
   void MoveFirstToEndOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                         BufferPoolManager *buffer_pool_manager);
+
   void MoveLastToFrontOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                          BufferPoolManager *buffer_pool_manager);
 
  private:
   // Flexible array member for page data.
+  // Each page is BUSTUB_PAGE_SIZE bytes.
   MappingType array_[1];
   void CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager);
   void CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager);

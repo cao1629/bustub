@@ -70,6 +70,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
    * @param[out] page_id id of created page
    * @return nullptr if no new pages could be created, otherwise pointer to new page
    */
+  // Now I need to write something to a new page.
   auto NewPgImp(page_id_t *page_id) -> Page * override;
 
   /**
@@ -88,6 +89,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
    * @param page_id id of page to be fetched
    * @return nullptr if page_id cannot be fetched, otherwise pointer to the requested page
    */
+  // Now I need to read something from or write something to an old page.
   auto FetchPgImp(page_id_t page_id) -> Page * override;
 
   /**
@@ -103,6 +105,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
    * @param is_dirty true if the page should be marked as dirty, false otherwise
    * @return false if the page is not in the page table or its pin count is <= 0 before this call, true otherwise
    */
+  // Each page in the buffer pool has a pin count.
   auto UnpinPgImp(page_id_t page_id, bool is_dirty) -> bool override;
 
   /**
@@ -116,6 +119,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
    * @param page_id id of page to be flushed, cannot be INVALID_PAGE_ID
    * @return false if the page could not be found in the page table, true otherwise
    */
+  // After calling this method, the page is still in the buffer pool. We just flush it to disk.
   auto FlushPgImp(page_id_t page_id) -> bool override;
 
   /**
@@ -138,27 +142,40 @@ class BufferPoolManagerInstance : public BufferPoolManager {
    * @param page_id id of page to be deleted
    * @return false if the page exists but could not be deleted, true if the page didn't exist or deletion succeeded
    */
+  // Specify a page to remove from the buffer pool without using the replacer.
   auto DeletePgImp(page_id_t page_id) -> bool override;
 
   /** Number of pages in the buffer pool. */
+  // buffer pool's capacity - number of freelist
   const size_t pool_size_;
+
   /** The next page id to be allocated  */
   std::atomic<page_id_t> next_page_id_ = 0;
+
   /** Bucket size for the extendible hash table */
   const size_t bucket_size_ = 4;
 
   /** Array of buffer pool pages. */
   Page *pages_;
+
   /** Pointer to the disk manager. */
   DiskManager *disk_manager_ __attribute__((__unused__));
+
   /** Pointer to the log manager. Please ignore this for P1. */
   LogManager *log_manager_ __attribute__((__unused__));
+
   /** Page table for keeping track of buffer pool pages. */
+  // Now I have a page id, I want to get the corresponding page in the buffer pool.
+  // page_table_[page id] -> frame id
+  // frame id > pages[frame id]
   ExtendibleHashTable<page_id_t, frame_id_t> *page_table_;
+
   /** Replacer to find unpinned pages for replacement. */
   LRUKReplacer *replacer_;
+
   /** List of free frames that don't have any pages on them. */
   std::list<frame_id_t> free_list_;
+
   /** This latch protects shared data structures. We recommend updating this comment to describe what it protects. */
   std::mutex latch_;
 

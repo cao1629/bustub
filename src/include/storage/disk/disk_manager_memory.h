@@ -60,6 +60,7 @@ class DiskManagerMemory : public DiskManager {
  * DiskManagerMemory replicates the utility of DiskManager on memory. It is primarily used for
  * data structure performance testing.
  */
+// We have unlimited memory. So we can stimulate the disk storage with memory.
 class DiskManagerUnlimitedMemory : public DiskManager {
  public:
   DiskManagerUnlimitedMemory() = default;

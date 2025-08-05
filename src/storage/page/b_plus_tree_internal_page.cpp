@@ -58,20 +58,32 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetValueAt(int index, const ValueType &valu
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const -> int {
-  auto it = std::find_if(array_, array_ + GetSize(), [&value](const auto &pair) { return pair.second == value; });
+  auto it = std::find_if(array_, array_ + GetSize(),
+    [&value](const auto &pair) { return pair.second == value; });
   return std::distance(array_, it);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType {
+
   auto target = std::lower_bound(array_ + 1, array_ + GetSize(), key,
                                  [&comparator](const auto &pair, auto k) { return comparator(pair.first, k) < 0; });
+  // given "key" >= all keys in this internal page
   if (target == array_ + GetSize()) {
     return ValueAt(GetSize() - 1);
   }
+
+  // given "key" exists in this internal page, which is ki
+  // ki-1 vi-1 ki vi
+  // then we will find the "given" key down to vi
   if (comparator(target->first, key) == 0) {
     return target->second;
   }
+
+  // given "key" does not exist in this internal page
+  // find the first key that is greater than "key", which is ki
+  // ki-1 vi-1 ki vi
+  // then we will find the "given" key down to vi-1
   return std::prev(target)->second;
 }
 
@@ -87,6 +99,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::PopulateNewRoot(const ValueType &old_value,
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
                                                      const ValueType &new_value) -> int {
+  // what if old_value is not found?
   auto new_value_idx = ValueIndex(old_value) + 1;
   std::move_backward(array_ + new_value_idx, array_ + GetSize(), array_ + GetSize() + 1);
 
@@ -98,6 +111,8 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value,
   return GetSize();
 }
 
+// Why do we need BufferPoolManager here?
+// Because we need to update the parent page id of the child pages
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient,
                                                 BufferPoolManager *buffer_pool_manager) {
@@ -121,11 +136,13 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, Buf
   IncreaseSize(size);
 }
 
+// Remove te key/value pair at the given "index"
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Remove(int index) {
   std::move(array_ + index + 1, array_ + GetSize(), array_ + index);
   IncreaseSize(-1);
 }
+
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() -> ValueType {
@@ -133,6 +150,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() -> ValueType {
   SetSize(0);
   return only_value;
 }
+
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
@@ -142,6 +160,8 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient,
   SetSize(0);
 }
 
+// Move the first key/value pair to the end of recipient page.
+// The first key is empty, so we set it to middle_key, then move the first item to the destination.
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                       BufferPoolManager *buffer_pool_manager) {
@@ -164,10 +184,13 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyLastFrom(const MappingType &pair, Buffe
   buffer_pool_manager->UnpinPage(page->GetPageId(), true);
 }
 
+// Move the last key/value pair to the front of recipient page.
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                        BufferPoolManager *buffer_pool_manager) {
   auto last_item = array_[GetSize() - 1];
+
+  // Move one item to the front of recipient page. The first item will not be the first time anymore.
   recipient->SetKeyAt(0, middle_key);
   recipient->CopyFirstFrom(last_item, buffer_pool_manager);
 

@@ -39,6 +39,8 @@ enum class Operation { SEARCH, INSERT, DELETE };
  */
 INDEX_TEMPLATE_ARGUMENTS
 class BPlusTree {
+
+  
   using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
   using LeafPage = BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>;
 
@@ -80,6 +82,7 @@ class BPlusTree {
 
   auto FindLeaf(const KeyType &key, Operation operation, Transaction *transaction = nullptr, bool leftMost = false,
                 bool rightMost = false) -> Page *;
+
   void ReleaseLatchFromQueue(Transaction *transaction);
 
  private:
