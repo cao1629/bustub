@@ -21,6 +21,7 @@ BPLUSTREE_INDEX_TYPE::BPlusTreeIndex(std::unique_ptr<IndexMetadata> &&metadata, 
       comparator_(GetMetadata()->GetKeySchema()),
       container_(GetMetadata()->GetName(), buffer_pool_manager, comparator_) {}
 
+// "key": columns used as index key
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_INDEX_TYPE::InsertEntry(const Tuple &key, RID rid, Transaction *transaction) {
   // construct insert index key

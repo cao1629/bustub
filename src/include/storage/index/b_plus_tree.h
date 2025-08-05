@@ -40,7 +40,7 @@ enum class Operation { SEARCH, INSERT, DELETE };
 INDEX_TEMPLATE_ARGUMENTS
 class BPlusTree {
 
-  
+
   using InternalPage = BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator>;
   using LeafPage = BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>;
 
@@ -115,6 +115,7 @@ class BPlusTree {
                     int index, bool from_prev);
 
   auto AdjustRoot(BPlusTreePage *node) -> bool;
+
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;

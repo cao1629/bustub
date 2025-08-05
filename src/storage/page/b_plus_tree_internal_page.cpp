@@ -151,7 +151,9 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() -> ValueType {
   return only_value;
 }
 
-
+// Move all items to the end of "recipient".
+// Because the first key of an internal page is always empty, we need to set it to middle_key first.
+// How do we get middle_key? From the parent page.
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                BufferPoolManager *buffer_pool_manager) {

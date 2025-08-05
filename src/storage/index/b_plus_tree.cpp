@@ -261,11 +261,11 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   transaction->GetDeletedPageSet()->clear();
 }
 
-// This page may need to coalesce or redistribute with its sibling. Maybe not.
-// If it really happens, return true. Otherwise, return false.
+// Return value: whether the current node should be deleted.
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -> bool {
+
 
   if (node->IsRootPage()) {
     auto root_should_delete = AdjustRoot(node);
@@ -278,16 +278,21 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
     return false;
   }
 
+  // need to coalesce or redistribute
   auto parent_page = buffer_pool_manager_->FetchPage(node->GetParentPageId());
   auto *parent_node = reinterpret_cast<InternalPage *>(parent_page->GetData());
   auto idx = parent_node->ValueIndex(node->GetPageId());
 
+  // idx > 0 means we have previous siblings
   if (idx > 0) {
+
     auto sibling_page = buffer_pool_manager_->FetchPage(parent_node->ValueAt(idx - 1));
     sibling_page->WLatch();
     N *sibling_node = reinterpret_cast<N *>(sibling_page->GetData());
 
+    // Removing one item from the sibling does not cause it to be underflow.
     if (sibling_node->GetSize() > sibling_node->GetMinSize()) {
+
       Redistribute(sibling_node, node, parent_node, idx, true);
 
       ReleaseLatchFromQueue(transaction);
@@ -298,12 +303,13 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
       return false;
     }
 
-    // coalesce
+    // We are unable to find a sibling to redistribute with, so we coalesce.
     auto parent_node_should_delete = Coalesce(sibling_node, node, parent_node, idx, transaction);
 
     if (parent_node_should_delete) {
       transaction->AddIntoDeletedPageSet(parent_node->GetPageId());
     }
+
     buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), true);
     sibling_page->WUnlatch();
     buffer_pool_manager_->UnpinPage(sibling_page->GetPageId(), true);
@@ -341,11 +347,15 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
   return false;
 }
 
+// Coalesce two nodes, move all items from "node" to "neighbor_node", then delete "node"
+// Return value: whether parent node should be deleted.
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 auto BPLUSTREE_TYPE::Coalesce(N *neighbor_node, N *node,
-                              BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent, int index,
+                              BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent,
+                              int index,
                               Transaction *transaction) -> bool {
+
   auto middle_key = parent->KeyAt(index);
 
   if (node->IsLeafPage()) {
@@ -363,15 +373,19 @@ auto BPLUSTREE_TYPE::Coalesce(N *neighbor_node, N *node,
   return CoalesceOrRedistribute(parent, transaction);
 }
 
+// Move one item from neighbor_node. We do not delete any node here.
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node,
-                                  BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent, int index,
+                                  BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *parent,
+                                  int index,
                                   bool from_prev) {
+  // leaf node
   if (node->IsLeafPage()) {
     auto *leaf_node = reinterpret_cast<LeafPage *>(node);
     auto *neighbor_leaf_node = reinterpret_cast<LeafPage *>(neighbor_node);
 
+    // [node, neighbor_node]
     if (!from_prev) {
       neighbor_leaf_node->MoveFirstToEndOf(leaf_node);
       parent->SetKeyAt(index + 1, neighbor_leaf_node->KeyAt(0));
@@ -379,7 +393,7 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node,
       neighbor_leaf_node->MoveLastToFrontOf(leaf_node);
       parent->SetKeyAt(index, leaf_node->KeyAt(0));
     }
-  } else {
+  } else { // internal node
     auto *internal_node = reinterpret_cast<InternalPage *>(node);
     auto *neighbor_internal_node = reinterpret_cast<InternalPage *>(neighbor_node);
 
@@ -393,8 +407,10 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node,
   }
 }
 
+
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) -> bool {
+
   if (!old_root_node->IsLeafPage() && old_root_node->GetSize() == 1) {
     auto *root_node = reinterpret_cast<InternalPage *>(old_root_node);
     auto only_child_page = buffer_pool_manager_->FetchPage(root_node->ValueAt(0));
@@ -415,6 +431,8 @@ auto BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) -> bool {
   }
   return false;
 }
+
+
 /*****************************************************************************
  * INDEX ITERATOR
  *****************************************************************************/
