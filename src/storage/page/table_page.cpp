@@ -58,7 +58,7 @@ auto TablePage::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn, Lock
     return false;
   }
 
-  // Otherwise we claim available free space..
+  // Otherwise we claim available free space.
   SetFreeSpacePointer(GetFreeSpacePointer() - tuple.size_);
   memcpy(GetData() + GetFreeSpacePointer(), tuple.data_, tuple.size_);
 
@@ -147,6 +147,7 @@ auto TablePage::UpdateTuple(const Tuple &new_tuple, Tuple *old_tuple, const RID 
     }
     return false;
   }
+
   uint32_t tuple_size = GetTupleSize(slot_num);
   // If the tuple is deleted, abort the transaction.
   if (IsDeleted(tuple_size)) {
@@ -155,7 +156,8 @@ auto TablePage::UpdateTuple(const Tuple &new_tuple, Tuple *old_tuple, const RID 
     }
     return false;
   }
-  // If there is not enuogh space to update, we need to update via delete followed by an insert (not enough space).
+
+  // If there is not enough space to update, we need to update via delete followed by an insert (not enough space).
   if (GetFreeSpaceRemaining() + tuple_size < new_tuple.size_) {
     return false;
   }
@@ -166,6 +168,7 @@ auto TablePage::UpdateTuple(const Tuple &new_tuple, Tuple *old_tuple, const RID 
   if (old_tuple->allocated_) {
     delete[] old_tuple->data_;
   }
+
   old_tuple->data_ = new char[old_tuple->size_];
   memcpy(old_tuple->data_, GetData() + tuple_offset, old_tuple->size_);
   old_tuple->rid_ = rid;
@@ -214,6 +217,7 @@ void TablePage::ApplyDelete(const RID &rid, Transaction *txn, LogManager *log_ma
 
   uint32_t tuple_offset = GetTupleOffsetAtSlot(slot_num);
   uint32_t tuple_size = GetTupleSize(slot_num);
+
   // Check if this is a delete operation, i.e. commit a delete.
   if (IsDeleted(tuple_size)) {
     tuple_size = UnsetDeletedFlag(tuple_size);
@@ -246,6 +250,7 @@ void TablePage::ApplyDelete(const RID &rid, Transaction *txn, LogManager *log_ma
 
   memmove(GetData() + free_space_pointer + tuple_size, GetData() + free_space_pointer,
           tuple_offset - free_space_pointer);
+
   SetFreeSpacePointer(free_space_pointer + tuple_size);
   SetTupleSize(slot_num, 0);
   SetTupleOffsetAtSlot(slot_num, 0);
@@ -259,6 +264,7 @@ void TablePage::ApplyDelete(const RID &rid, Transaction *txn, LogManager *log_ma
   }
 }
 
+// MarkDelete() -> RollbackDelete()
 void TablePage::RollbackDelete(const RID &rid, Transaction *txn, LogManager *log_manager) {
   // Log the rollback.
   /**
@@ -326,6 +332,7 @@ auto TablePage::GetTuple(const RID &rid, Tuple *tuple, Transaction *txn, LockMan
   return true;
 }
 
+
 auto TablePage::GetFirstTupleRid(RID *first_rid) -> bool {
   // Find and return the first valid tuple.
   for (uint32_t i = 0; i < GetTupleCount(); ++i) {
@@ -338,6 +345,8 @@ auto TablePage::GetFirstTupleRid(RID *first_rid) -> bool {
   return false;
 }
 
+// Skip deletion marks.
+// Return false if no more tuples in the page.
 auto TablePage::GetNextTupleRid(const RID &cur_rid, RID *next_rid) -> bool {
   BUSTUB_ASSERT(cur_rid.GetPageId() == GetTablePageId(), "Wrong table!");
   // Find and return the first valid tuple after our current slot number.
@@ -351,4 +360,6 @@ auto TablePage::GetNextTupleRid(const RID &cur_rid, RID *next_rid) -> bool {
   next_rid->Set(INVALID_PAGE_ID, 0);
   return false;
 }
+
+
 }  // namespace bustub

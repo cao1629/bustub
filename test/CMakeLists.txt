@@ -65,7 +65,7 @@ set(BUSTUB_SLT_SOURCES
         "${PROJECT_SOURCE_DIR}/test/sql/p3.14-topn.slt"
         "${PROJECT_SOURCE_DIR}/test/sql/p3.15-integration-1.slt"
         "${PROJECT_SOURCE_DIR}/test/sql/p3.16-integration-2.slt"
-        "${PROJECT_SOURCE_DIR}/test/sql/p3.leaderboard-q1.slt"
+"${PROJECT_SOURCE_DIR}/test/sql/p3.leaderboard-q1.slt"
         "${PROJECT_SOURCE_DIR}/test/sql/p3.leaderboard-q2.slt"
         "${PROJECT_SOURCE_DIR}/test/sql/p3.leaderboard-q3.slt"
         )

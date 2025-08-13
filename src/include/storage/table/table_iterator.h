@@ -29,6 +29,7 @@ class TableIterator {
   friend class Cursor;
 
  public:
+  // "RID rid" is the starting point of the iterator.
   TableIterator(TableHeap *table_heap, RID rid, Transaction *txn);
 
   TableIterator(const TableIterator &other)

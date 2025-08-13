@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)   # For clang-tidy.
 set(BUILD_SHARED_LIBS OFF)              # We expect external libraries to be linked statically.
 set(CMAKE_CXX_STANDARD 17)              # Compile as C++17.
@@ -202,6 +203,7 @@ file(GLOB_RECURSE BUSTUB_LINT_FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp"
         )
 
+
 # Balancing act: cpplint.py takes a non-trivial time to launch,
 # so process 12 files per invocation, while still ensuring parallelism
 add_custom_target(check-lint echo '${BUSTUB_LINT_FILES}' | xargs -n12 -P8
@@ -336,6 +338,7 @@ add_custom_target(check-clang-tidy-p3
         -p ${CMAKE_BINARY_DIR}                                            # using cmake's generated compile commands
         ${P3_FILES}
         )
+
 add_custom_target(submit-p3
         zip project3-submission.zip
         ${P3_FILES}

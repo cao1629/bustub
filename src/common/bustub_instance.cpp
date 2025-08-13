@@ -290,7 +290,7 @@ auto BustubInstance::ExecuteSqlTxn(const std::string &sql, ResultWriter &writer,
         // Print optimizer result.
         bustub::Optimizer optimizer(*catalog_, IsForceStarterRule());
         auto optimized_plan = optimizer.Optimize(planner.plan_);
-
+//
         l.unlock();
 
         if ((explain_stmt.options_ & ExplainOptions::OPTIMIZER) != 0) {
@@ -318,6 +318,7 @@ auto BustubInstance::ExecuteSqlTxn(const std::string &sql, ResultWriter &writer,
     bustub::Optimizer optimizer(*catalog_, IsForceStarterRule());
     auto optimized_plan = optimizer.Optimize(planner.plan_);
 
+//    auto optimized_plan = planner.plan_;
     l.unlock();
 
     // Execute the query.

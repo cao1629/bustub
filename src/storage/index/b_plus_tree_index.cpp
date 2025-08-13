@@ -40,6 +40,9 @@ void BPLUSTREE_INDEX_TYPE::DeleteEntry(const Tuple &key, RID rid, Transaction *t
   container_.Remove(index_key, transaction);
 }
 
+// No duplicate values are allowed. Each key can only have one RID.
+// If "key" exists in the index, put its RID into "result".
+// Why do we need a vector here? For range scan.
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_INDEX_TYPE::ScanKey(const Tuple &key, std::vector<RID> *result, Transaction *transaction) {
   // construct scan index key
@@ -48,6 +51,7 @@ void BPLUSTREE_INDEX_TYPE::ScanKey(const Tuple &key, std::vector<RID> *result, T
 
   container_.GetValue(index_key, result, transaction);
 }
+
 
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_INDEX_TYPE::GetBeginIterator() -> INDEXITERATOR_TYPE { return container_.Begin(); }

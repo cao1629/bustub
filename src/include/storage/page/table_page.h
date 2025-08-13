@@ -20,6 +20,8 @@
 #include "storage/page/page.h"
 #include "storage/table/tuple.h"
 
+// 1000 0000 ..............
+// Given a tuple size of 4 bytes, the first bit is used to indicate whether the tuple is deleted.
 static constexpr uint64_t DELETE_MASK = (1U << (8 * sizeof(uint32_t) - 1));
 
 namespace bustub {
@@ -81,6 +83,7 @@ class TablePage : public Page {
    * @param log_manager the log manager
    * @return true if the insert is successful (i.e. there is enough space)
    */
+   // Return false if no enough space
   auto InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn, LockManager *lock_manager, LogManager *log_manager)
       -> bool;
 
@@ -121,6 +124,8 @@ class TablePage : public Page {
    * @param lock_manager the lock manager
    * @return true if the read is successful (i.e. the tuple exists)
    */
+  // Given a RID, read the tuple and store it into "Tuple *tuple".
+  // Return false if the tuple does not exist or is deleted.
   auto GetTuple(const RID &rid, Tuple *tuple, Transaction *txn, LockManager *lock_manager) -> bool;
 
   /** @return the rid of the first tuple in this page */
@@ -129,6 +134,7 @@ class TablePage : public Page {
    * @param[out] first_rid the RID of the first tuple in this page
    * @return true if the first tuple exists, false otherwise
    */
+  // If all tuples are deleted, return false.
   auto GetFirstTupleRid(RID *first_rid) -> bool;
 
   /**
@@ -141,8 +147,12 @@ class TablePage : public Page {
  private:
   static_assert(sizeof(page_id_t) == 4);
 
+  // Page ID, LSN, PrevPageId, NextPageId, FreeSpacePointer, TupleCount
   static constexpr size_t SIZE_TABLE_PAGE_HEADER = 24;
+
+  // Tuple offset, Tuple size
   static constexpr size_t SIZE_TUPLE = 8;
+
   static constexpr size_t OFFSET_PREV_PAGE_ID = 8;
   static constexpr size_t OFFSET_NEXT_PAGE_ID = 12;
   static constexpr size_t OFFSET_FREE_SPACE = 16;
@@ -205,5 +215,6 @@ class TablePage : public Page {
   static auto UnsetDeletedFlag(uint32_t tuple_size) -> uint32_t {
     return static_cast<uint32_t>(tuple_size & (~DELETE_MASK));
   }
+
 };
 }  // namespace bustub

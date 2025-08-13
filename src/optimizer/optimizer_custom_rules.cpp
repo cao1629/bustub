@@ -130,7 +130,8 @@ auto Optimizer::OptimizePredicatePushDown(const AbstractPlanNodeRef &plan) -> Ab
     std::vector<AbstractExpressionRef> join_preds;
     std::vector<AbstractExpressionRef> filter_preds;
     if (const auto *expr = dynamic_cast<const LogicExpression *>(&nlj_plan.Predicate()); expr != nullptr) {
-      while (const auto *inner_expr = dynamic_cast<const LogicExpression *>(expr->children_[0].get())) {
+      while (dynamic_cast<const LogicExpression *>(expr->children_[0].get())) {
+//      while (const auto *inner_expr = dynamic_cast<const LogicExpression *>(expr->children_[0].get())) {
         if (const auto *pred = dynamic_cast<const ColumnValueExpression *>(expr->children_[1]->children_[1].get());
             pred != nullptr) {
           join_preds.push_back(expr->children_[1]);

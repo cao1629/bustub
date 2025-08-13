@@ -90,6 +90,8 @@ class Tuple {
   // Get the starting storage address of specific column
   auto GetDataPtr(const Schema *schema, uint32_t column_idx) const -> const char *;
 
+  // Whether this tuple object manages the memory of "char *data_".
+  // If true, when data_ points to something new, we should delete[] the old data_.
   bool allocated_{false};  // is allocated?
   RID rid_{};              // if pointing to the table heap, the rid is valid
   uint32_t size_{0};

@@ -36,6 +36,7 @@ TableHeap::TableHeap(BufferPoolManager *buffer_pool_manager, LockManager *lock_m
   buffer_pool_manager_->UnpinPage(first_page_id_, true);
 }
 
+
 auto TableHeap::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn) -> bool {
   if (tuple.size_ + 32 > BUSTUB_PAGE_SIZE) {  // larger than one page size
     txn->SetState(TransactionState::ABORTED);
@@ -164,6 +165,7 @@ auto TableHeap::GetTuple(const RID &rid, Tuple *tuple, Transaction *txn, bool ac
     txn->SetState(TransactionState::ABORTED);
     return false;
   }
+
   // Read the tuple from the page.
   if (acquire_read_lock) {
     page->RLatch();
@@ -172,6 +174,7 @@ auto TableHeap::GetTuple(const RID &rid, Tuple *tuple, Transaction *txn, bool ac
   if (acquire_read_lock) {
     page->RUnlatch();
   }
+
   buffer_pool_manager_->UnpinPage(rid.GetPageId(), false);
   return res;
 }

@@ -41,8 +41,14 @@ class IndexIterator {
  private:
   // add your own private member variables here
   BufferPoolManager *buffer_pool_manager_;
+
+  // current page being iterated
   Page *page_;
+
+  // cast Page *page_ to LeafPage*
   LeafPage *leaf_ = nullptr;
+
+  // position
   int index_ = 0;
 };
 

@@ -50,7 +50,9 @@ auto TryBind(const std::string &query) {
       false);
 
   binder.ParseAndSave(query);
+
   std::vector<std::unique_ptr<BoundStatement>> statements;
+
   for (auto *stmt : binder.statement_nodes_) {
     auto statement = binder.BindStatement(stmt);
     statements.emplace_back(std::move(statement));
@@ -63,6 +65,7 @@ void PrintStatements(const std::vector<std::unique_ptr<BoundStatement>> &stateme
     std::cout << statement->ToString() << std::endl;
   }
 }
+
 
 TEST(BinderTest, BindSelectValue) {
   auto statements = TryBind("select 1");
@@ -184,5 +187,6 @@ TEST(BinderTest, DISABLED_BindUpdate) { TryBind("UPDATE y SET z = z + 1;"); }
 
 // TODO(chi): delete is not supported yet
 TEST(BinderTest, DISABLED_BindDelete) { TryBind("DELETE FROM y WHERE z = 1"); }
+
 
 }  // namespace bustub

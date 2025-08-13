@@ -57,6 +57,9 @@ class TableHeap {
    * @param txn the transaction performing the insert
    * @return true iff the insert is successful
    */
+  // Return false if:
+  // [1] the tuple is too large (>= page_size)
+  // [2]
   auto InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn) -> bool;
 
   /**
@@ -97,6 +100,7 @@ class TableHeap {
    * @param txn transaction performing the read
    * @return true if the read was successful (i.e. the tuple exists)
    */
+  // acquire_read_lock: whether to acquire read lock on the tuple
   auto GetTuple(const RID &rid, Tuple *tuple, Transaction *txn, bool acquire_read_lock = true) -> bool;
 
   /** @return the begin iterator of this table */
