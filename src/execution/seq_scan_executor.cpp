@@ -20,6 +20,7 @@ SeqScanExecutor::SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNod
 }
 
 void SeqScanExecutor::Init() {
+  // READ_UNCOMMITTED: We do not need to acquire any locks during sequential scan since sequential scan is a read-only operation.
   if (exec_ctx_->GetTransaction()->GetIsolationLevel() != IsolationLevel::READ_UNCOMMITTED) {
     try {
       bool is_locked = exec_ctx_->GetLockManager()->LockTable(
@@ -35,9 +36,14 @@ void SeqScanExecutor::Init() {
 }
 
 auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
+  // If filter_predicate_ is not satisfied, skip the current tuple.
   do {
+    // Reach the end of the table
     if (table_iter_ == table_info_->table_->End()) {
+
+      // READ_COMMITTED: Reads are done, unlock the rows and the table.
       if (exec_ctx_->GetTransaction()->GetIsolationLevel() == IsolationLevel::READ_COMMITTED) {
+
         const auto locked_row_set = exec_ctx_->GetTransaction()->GetSharedRowLockSet()->at(table_info_->oid_);
         table_oid_t oid = table_info_->oid_;
         for (auto rid : locked_row_set) {
@@ -54,6 +60,7 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   } while (plan_->filter_predicate_ != nullptr &&
            !plan_->filter_predicate_->Evaluate(tuple, table_info_->schema_).GetAs<bool>());
 
+  // READ_UNCOMMITTED: We do not need to acquire any locks during sequential scan since sequential scan is a read-only operation.
   if (exec_ctx_->GetTransaction()->GetIsolationLevel() != IsolationLevel::READ_UNCOMMITTED) {
     try {
       bool is_locked = exec_ctx_->GetLockManager()->LockRow(exec_ctx_->GetTransaction(), LockManager::LockMode::SHARED,

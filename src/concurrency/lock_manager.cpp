@@ -53,11 +53,15 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
   }
 
   table_lock_map_latch_.lock();
+
+  // Look at table_lock_map_ to see if there is already a lock request queue for the table.
   if (table_lock_map_.find(oid) == table_lock_map_.end()) {
     table_lock_map_.emplace(oid, std::make_shared<LockRequestQueue>());
   }
 
   auto lock_request_queue = table_lock_map_.find(oid)->second;
+
+  // This pattern: lock a smaller thing, and then unlock a larger thing.
   lock_request_queue->latch_.lock();
   table_lock_map_latch_.unlock();
 
@@ -81,11 +85,15 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
       if (!(request->lock_mode_ == LockMode::INTENTION_SHARED &&
             (lock_mode == LockMode::SHARED || lock_mode == LockMode::EXCLUSIVE ||
              lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::SHARED_INTENTION_EXCLUSIVE)) &&
+
           !(request->lock_mode_ == LockMode::SHARED &&
             (lock_mode == LockMode::EXCLUSIVE || lock_mode == LockMode::SHARED_INTENTION_EXCLUSIVE)) &&
+
           !(request->lock_mode_ == LockMode::INTENTION_EXCLUSIVE &&
             (lock_mode == LockMode::EXCLUSIVE || lock_mode == LockMode::SHARED_INTENTION_EXCLUSIVE)) &&
+
           !(request->lock_mode_ == LockMode::SHARED_INTENTION_EXCLUSIVE && (lock_mode == LockMode::EXCLUSIVE))) {
+
         lock_request_queue->latch_.unlock();
         txn->SetState(TransactionState::ABORTED);
         throw TransactionAbortException(txn->GetTransactionId(), AbortReason::INCOMPATIBLE_UPGRADE);
@@ -104,6 +112,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
           break;
         }
       }
+
       lock_request_queue->request_queue_.insert(lr_iter, upgrade_lock_request);
       lock_request_queue->upgrading_ = txn->GetTransactionId();
 
@@ -290,6 +299,7 @@ auto LockManager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_
           break;
         }
       }
+
       lock_request_queue->request_queue_.insert(lr_iter, upgrade_lock_request);
       lock_request_queue->upgrading_ = txn->GetTransactionId();
 
@@ -498,11 +508,20 @@ void LockManager::RunCycleDetection() {
   }
 }
 
+// "lock_request_queue" is table_lock_map_ when we lock a table
+// "lock_request_queue" is row_lock_map_ when we lock a row
+//
+// "lock_request" can be granted when it is compatible with all previous granted locks in the queue, and all previous
+// lock requests in the queue are granted.
+//
+// "lock_request" can not be granted when it is incompatible with any previous granted locks in the queue, or if there
+// are any previous lock requests in the queue that are not granted yet.
 auto LockManager::GrantLock(const std::shared_ptr<LockRequest> &lock_request,
                             const std::shared_ptr<LockRequestQueue> &lock_request_queue) -> bool {
   for (auto &lr : lock_request_queue->request_queue_) {
     if (lr->granted_) {
       switch (lock_request->lock_mode_) {
+        // Check compatibility
         case LockMode::SHARED:
           if (lr->lock_mode_ == LockMode::INTENTION_EXCLUSIVE ||
               lr->lock_mode_ == LockMode::SHARED_INTENTION_EXCLUSIVE || lr->lock_mode_ == LockMode::EXCLUSIVE) {
@@ -510,6 +529,7 @@ auto LockManager::GrantLock(const std::shared_ptr<LockRequest> &lock_request,
           }
           break;
         case LockMode::EXCLUSIVE:
+          // Exclusive lock is incompatible with all other locks.
           return false;
           break;
         case LockMode::INTENTION_SHARED:
@@ -529,14 +549,19 @@ auto LockManager::GrantLock(const std::shared_ptr<LockRequest> &lock_request,
           }
           break;
       }
+
+      // Pass the compatibility check. Go to the next lock request in the queue.
     } else if (lock_request.get() != lr.get()) {
       return false;
     } else {
+      // All previous lock requests are granted.
+      // lr is exactly the lock_request we are trying to grant. (We inserted it at the end of the queue earlier.)
       return true;
     }
   }
   return false;
 }
+
 
 void LockManager::InsertOrDeleteTableLockSet(Transaction *txn, const std::shared_ptr<LockRequest> &lock_request,
                                              bool insert) {
