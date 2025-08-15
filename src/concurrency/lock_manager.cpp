@@ -66,8 +66,9 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
   table_lock_map_latch_.unlock();
 
   for (auto request : lock_request_queue->request_queue_) {  // NOLINT
-    // One transaction has already requested a lock on the table.
+
     if (request->txn_id_ == txn->GetTransactionId()) {
+      // The transaction already holds a same lock on the table. No need to upgrade it. Just return true.
       if (request->lock_mode_ == lock_mode) {
         lock_request_queue->latch_.unlock();
         return true;
@@ -81,7 +82,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
         throw TransactionAbortException(txn->GetTransactionId(), AbortReason::UPGRADE_CONFLICT);
       }
 
-      // Compatibility check
+      // Upgrade compatibility check.
       if (!(request->lock_mode_ == LockMode::INTENTION_SHARED &&
             (lock_mode == LockMode::SHARED || lock_mode == LockMode::EXCLUSIVE ||
              lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::SHARED_INTENTION_EXCLUSIVE)) &&
@@ -99,12 +100,15 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
         throw TransactionAbortException(txn->GetTransactionId(), AbortReason::INCOMPATIBLE_UPGRADE);
       }
 
-      // Passed compatibility check
+      // Now we passed compatibility check.
+      // Each table can have at most one lock. So we need to upgrade the exising lock request.
+      // First remove the existing lock request from the queue.
       lock_request_queue->request_queue_.remove(request);
       InsertOrDeleteTableLockSet(txn, request, false);
 
       auto upgrade_lock_request = std::make_shared<LockRequest>(txn->GetTransactionId(), lock_mode, oid);
 
+      // A lost request being upgraded should be prioritized over other waiting lock requests on the same resource.
       std::list<std::shared_ptr<LockRequest>>::iterator lr_iter;
       for (lr_iter = lock_request_queue->request_queue_.begin(); lr_iter != lock_request_queue->request_queue_.end();
            lr_iter++) {
@@ -113,6 +117,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
         }
       }
 
+      // Insert the upgrade lock request into the queue before the first non-granted lock request.
       lock_request_queue->request_queue_.insert(lr_iter, upgrade_lock_request);
       lock_request_queue->upgrading_ = txn->GetTransactionId();
 
@@ -275,6 +280,7 @@ auto LockManager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_
         throw TransactionAbortException(txn->GetTransactionId(), AbortReason::UPGRADE_CONFLICT);
       }
 
+      //
       if (!(request->lock_mode_ == LockMode::INTENTION_SHARED &&
             (lock_mode == LockMode::SHARED || lock_mode == LockMode::EXCLUSIVE ||
              lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::SHARED_INTENTION_EXCLUSIVE)) &&
