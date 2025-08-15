@@ -243,13 +243,14 @@ class Transaction {
   /** @return the set of resources under an exclusive lock */
   inline auto GetExclusiveLockSet() -> std::shared_ptr<std::unordered_set<RID>> { return exclusive_lock_set_; }
 
-  /** @return the set of rows in under an exclusive lock */
+  /** @ret urn the set of rows in under an exclusive lock */
   inline auto GetExclusiveRowLockSet() -> std::shared_ptr<std::unordered_map<table_oid_t, std::unordered_set<RID>>> {
     return x_row_lock_set_;
   }
 
   /** @return the set of resources under a shared lock */
   inline auto GetSharedTableLockSet() -> std::shared_ptr<std::unordered_set<table_oid_t>> { return s_table_lock_set_; }
+
   inline auto GetExclusiveTableLockSet() -> std::shared_ptr<std::unordered_set<table_oid_t>> {
     return x_table_lock_set_;
   }
@@ -326,17 +327,22 @@ class Transaction {
  private:
   /** The current transaction state. */
   TransactionState state_{TransactionState::GROWING};
+
   /** The isolation level of the transaction. */
   IsolationLevel isolation_level_;
+
   /** The thread ID, used in single-threaded transactions. */
   std::thread::id thread_id_;
+
   /** The ID of this transaction. */
   txn_id_t txn_id_;
 
   /** The undo set of table tuples. */
   std::shared_ptr<std::deque<TableWriteRecord>> table_write_set_;
+
   /** The undo set of indexes. */
   std::shared_ptr<std::deque<IndexWriteRecord>> index_write_set_;
+
   /** The LSN of the last record written by the transaction. */
   lsn_t prev_lsn_;
 
@@ -344,11 +350,13 @@ class Transaction {
 
   /** Concurrent index: the pages that were latched during index operation. */
   std::shared_ptr<std::deque<Page *>> page_set_;
+
   /** Concurrent index: the page IDs that were deleted during index operation.*/
   std::shared_ptr<std::unordered_set<page_id_t>> deleted_page_set_;
 
   /** LockManager: the set of shared-locked tuples held by this transaction. */
   std::shared_ptr<std::unordered_set<RID>> shared_lock_set_;
+
   /** LockManager: the set of exclusive-locked tuples held by this transaction. */
   std::shared_ptr<std::unordered_set<RID>> exclusive_lock_set_;
 

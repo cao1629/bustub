@@ -354,13 +354,16 @@ class LockManager {
   /** Fall 2022 */
   /** Structure that holds lock requests for a given table oid */
   std::unordered_map<table_oid_t, std::shared_ptr<LockRequestQueue>> table_lock_map_;
+
   /** Coordination */
   std::mutex table_lock_map_latch_;
 
   /** Structure that holds lock requests for a given RID */
   std::unordered_map<RID, std::shared_ptr<LockRequestQueue>> row_lock_map_;
+
   /** Coordination */
   std::mutex row_lock_map_latch_;
+
 
   std::atomic<bool> enable_cycle_detection_;
   std::thread *cycle_detection_thread_;
