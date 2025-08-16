@@ -124,6 +124,8 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
       std::unique_lock<std::mutex> lock(lock_request_queue->latch_, std::adopt_lock);
       while (!GrantLock(upgrade_lock_request, lock_request_queue)) {
         lock_request_queue->cv_.wait(lock);
+
+        // What might cause the transaction to abort?
         if (txn->GetState() == TransactionState::ABORTED) {
           lock_request_queue->upgrading_ = INVALID_TXN_ID;
           lock_request_queue->request_queue_.remove(upgrade_lock_request);
