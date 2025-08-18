@@ -90,12 +90,16 @@ class IndexWriteRecord {
   table_oid_t table_oid_;
   /** Write type. */
   WType wtype_;
+
   /** The tuple is used to construct an index key. */
   Tuple tuple_;
+
   /** The old tuple is only used for the update operation. */
   Tuple old_tuple_;
+
   /** Each table has an index list, this is the identifier of an index into the list. */
   index_oid_t index_oid_;
+
   /** The catalog contains metadata required to locate index. */
   Catalog *catalog_;
 };

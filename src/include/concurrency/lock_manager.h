@@ -364,7 +364,6 @@ class LockManager {
   /** Coordination */
   std::mutex row_lock_map_latch_;
 
-
   std::atomic<bool> enable_cycle_detection_;
   std::thread *cycle_detection_thread_;
   /** Waits-for graph representation. */

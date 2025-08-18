@@ -208,6 +208,7 @@ class BustubInstance {
   /**
    * Get the executor context from the BusTub instance.
    */
+  // Each transaction has its own executor context.
   auto MakeExecutorContext(Transaction *txn) -> std::unique_ptr<ExecutorContext>;
 
  public:

@@ -35,8 +35,11 @@ void SeqScanExecutor::Init() {
   this->table_iter_ = table_info_->table_->Begin(exec_ctx_->GetTransaction());
 }
 
+
 auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   // If filter_predicate_ is not satisfied, skip the current tuple.
+  // do-while: first check whether we reach the end of the table, then keep skipping tuples
+  // until we find one that satisfies the predicate.
   do {
     // Reach the end of the table
     if (table_iter_ == table_info_->table_->End()) {

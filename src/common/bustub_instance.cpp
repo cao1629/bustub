@@ -200,6 +200,8 @@ auto BustubInstance::ExecuteSqlTxn(const std::string &sql, ResultWriter &writer,
 
   bool is_successful = true;
 
+
+  // Bind
   std::shared_lock<std::shared_mutex> l(catalog_lock_);
   bustub::Binder binder(*catalog_);
   binder.ParseAndSave(sql);

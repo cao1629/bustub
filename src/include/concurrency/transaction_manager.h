@@ -88,15 +88,20 @@ class TransactionManager {
    * Releases all the locks held by the given transaction.
    * @param txn the transaction whose locks should be released
    */
+  // strict two phase locking?
   void ReleaseLocks(Transaction *txn) {
     /** Drop all row locks */
     txn->LockTxn();
     std::unordered_map<table_oid_t, std::unordered_set<RID>> row_lock_set;
+
+    // Collect all shared row locks held by the transaction
     for (const auto &s_row_lock_set : *txn->GetSharedRowLockSet()) {
       for (auto rid : s_row_lock_set.second) {
         row_lock_set[s_row_lock_set.first].emplace(rid);
       }
     }
+
+    // Collect all exclusive row locks held by the transaction
     for (const auto &x_row_lock_set : *txn->GetExclusiveRowLockSet()) {
       for (auto rid : x_row_lock_set.second) {
         row_lock_set[x_row_lock_set.first].emplace(rid);
