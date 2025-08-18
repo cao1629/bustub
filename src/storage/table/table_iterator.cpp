@@ -70,6 +70,7 @@ auto TableIterator::operator++() -> TableIterator & {
       throw bustub::Exception("read non-existing tuple");
     }
   }
+
   // release until copy the tuple
   cur_page->RUnlatch();
   buffer_pool_manager->UnpinPage(cur_page->GetTablePageId(), false);

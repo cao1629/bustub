@@ -68,6 +68,7 @@ void TransactionManager::Commit(Transaction *txn) {
 
 void TransactionManager::Abort(Transaction *txn) {
   txn->SetState(TransactionState::ABORTED);
+
   // Rollback before releasing the lock.
   auto table_write_set = txn->GetWriteSet();
   while (!table_write_set->empty()) {
@@ -83,9 +84,12 @@ void TransactionManager::Abort(Transaction *txn) {
     }
     table_write_set->pop_back();
   }
+
   table_write_set->clear();
+
   // Rollback index updates
   auto index_write_set = txn->GetIndexWriteSet();
+
   while (!index_write_set->empty()) {
     auto &item = index_write_set->back();
     auto *catalog = item.catalog_;

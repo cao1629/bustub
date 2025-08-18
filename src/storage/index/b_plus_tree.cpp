@@ -72,6 +72,7 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
   return InsertIntoLeaf(key, value, transaction);
 }
 
+// Create a new b+ tree with a key-value pair.
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
   auto page = buffer_pool_manager_->NewPage(&root_page_id_);
@@ -119,7 +120,6 @@ auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   auto sibling_leaf_node = Split(node);
   sibling_leaf_node->SetNextPageId(node->GetNextPageId());
   node->SetNextPageId(sibling_leaf_node->GetPageId());
-
 
   auto risen_key = sibling_leaf_node->KeyAt(0);
   InsertIntoParent(node, risen_key, sibling_leaf_node, transaction);
