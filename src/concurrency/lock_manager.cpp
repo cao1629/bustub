@@ -78,7 +78,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
       }
 
       // One transaction is trying to upgrade its lock on the table.
-      // Abort the transaction that called LockTable().
+      // Abort the transaction that called this LockTable().
       if (lock_request_queue->upgrading_ != INVALID_TXN_ID) {
         lock_request_queue->latch_.unlock();
         txn->SetState(TransactionState::ABORTED);
@@ -128,6 +128,7 @@ auto LockManager::LockTable(Transaction *txn, LockMode lock_mode, const table_oi
       while (!GrantLock(upgrade_lock_request, lock_request_queue)) {
 
         // When this thread is waiting for the lock, lock_request_queue->latch_ is released.
+        // So lock_request_queue could be modified by other threads.
         lock_request_queue->cv_.wait(lock);
 
         // How come the transaction state becomes ABORTED?

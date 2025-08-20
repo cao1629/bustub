@@ -35,7 +35,10 @@ void SeqScanExecutor::Init() {
   this->table_iter_ = table_info_->table_->Begin(exec_ctx_->GetTransaction());
 }
 
-
+// Next tuple that satisfies the predicate
+// When the iterator reaches the end of the table, unlock the rows and the table when READ_COMMITTED.
+// READ_UNCOMMITED: we do not need to acquire any locks during sequential scan.
+// REPEATABLE_READ: unlock the rows and the table when the transaction is committed or aborted.
 auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   // If filter_predicate_ is not satisfied, skip the current tuple.
   // do-while: first check whether we reach the end of the table, then keep skipping tuples
