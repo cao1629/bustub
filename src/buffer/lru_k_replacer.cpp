@@ -96,9 +96,11 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   if (!is_evictable_[frame_id] && set_evictable) {
     curr_size_++;
   }
+
   if (is_evictable_[frame_id] && !set_evictable) {
     curr_size_--;
   }
+
   is_evictable_[frame_id] = set_evictable;
 }
 

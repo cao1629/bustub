@@ -136,7 +136,12 @@ class LRUKReplacer {
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
   [[maybe_unused]] size_t current_timestamp_{0};
+
+  // number of current evictable frames
   size_t curr_size_{0};
+
+  // how many frames the replacer can store.
+  // equal to: how many pages in the buffer pool.
   size_t replacer_size_;
   size_t k_;
   std::mutex latch_;

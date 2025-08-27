@@ -103,7 +103,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   recipient->CopyNFrom(array_ + start_split_indx, GetMaxSize() - start_split_indx);
 }
 
-
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   std::copy(items, items + size, array_ + GetSize());
@@ -124,7 +123,6 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
   *value = array_[target_in_array].second;
   return true;
 }
-
 
 // Why RemoveAndDelete?
 INDEX_TEMPLATE_ARGUMENTS
@@ -147,7 +145,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
   recipient->SetNextPageId(GetNextPageId());
   SetSize(0);
 }
-
 
 
 INDEX_TEMPLATE_ARGUMENTS

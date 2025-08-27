@@ -144,20 +144,20 @@ auto BPLUSTREE_TYPE::Split(N *node) -> N * {
   N *new_node = reinterpret_cast<N *>(page->GetData());
   new_node->SetPageType(node->GetPageType());
 
-  if (node->IsLeafPage()) {
+  if (node->IsLeafPage()) { // split leaf page
     auto *leaf = reinterpret_cast<LeafPage *>(node);
     auto *new_leaf = reinterpret_cast<LeafPage *>(new_node);
 
     new_leaf->Init(page->GetPageId(), node->GetParentPageId(), leaf_max_size_);
     leaf->MoveHalfTo(new_leaf);
-  } else {
+  } else {  // split internal page
+
     auto *internal = reinterpret_cast<InternalPage *>(node);
     auto *new_internal = reinterpret_cast<InternalPage *>(new_node);
 
     new_internal->Init(page->GetPageId(), node->GetParentPageId(), internal_max_size_);
     internal->MoveHalfTo(new_internal, buffer_pool_manager_);
   }
-
   return new_node;
 }
 
@@ -261,11 +261,10 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   transaction->GetDeletedPageSet()->clear();
 }
 
-// Return value: whether the current node should be deleted.
+// Return value: whether the current node should be deleted. (coalesce or redistribute)
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -> bool {
-
 
   if (node->IsRootPage()) {
     auto root_should_delete = AdjustRoot(node);
@@ -283,7 +282,7 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
   auto *parent_node = reinterpret_cast<InternalPage *>(parent_page->GetData());
   auto idx = parent_node->ValueIndex(node->GetPageId());
 
-  // idx > 0 means we have previous siblings
+  // idx > 0 means we have left siblings
   if (idx > 0) {
 
     auto sibling_page = buffer_pool_manager_->FetchPage(parent_node->ValueAt(idx - 1));
@@ -316,6 +315,7 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
     return true;
   }
 
+  // We have right siblings.
   if (idx != parent_node->GetSize() - 1) {
     auto sibling_page = buffer_pool_manager_->FetchPage(parent_node->ValueAt(idx + 1));
     sibling_page->WLatch();
@@ -344,6 +344,7 @@ auto BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) -
     return false;
   }
 
+  // We have no siblings. Only root node can have no siblings.
   return false;
 }
 
