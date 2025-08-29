@@ -109,6 +109,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   IncreaseSize(size);
 }
 
+
 // Given a key, find its value
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &keyComparator) const
@@ -149,7 +150,11 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) {
+
+  // GetItem(0) gets a reference
+  // copy it to first_item
   auto first_item = GetItem(0);
+
   std::move(array_ + 1, array_ + GetSize(), array_);
   IncreaseSize(-1);
   recipient->CopyLastFrom(first_item);
