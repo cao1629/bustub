@@ -111,6 +111,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value,
   return GetSize();
 }
 
+
 // Why do we need BufferPoolManager here?
 // Because we need to update the parent page id of the child pages
 INDEX_TEMPLATE_ARGUMENTS
@@ -121,6 +122,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient
   SetSize(start_split_indx);
   recipient->CopyNFrom(array_ + start_split_indx, original_size - start_split_indx, buffer_pool_manager);
 }
+
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager) {
@@ -135,6 +137,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, Buf
 
   IncreaseSize(size);
 }
+
 
 // Remove te key/value pair at the given "index"
 INDEX_TEMPLATE_ARGUMENTS
@@ -151,6 +154,7 @@ auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() -> ValueType {
   return only_value;
 }
 
+
 // Move all items to the end of "recipient".
 // Because the first key of an internal page is always empty, we need to set it to middle_key first.
 // How do we get middle_key? From the parent page.
@@ -161,6 +165,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient,
   recipient->CopyNFrom(array_, GetSize(), buffer_pool_manager);
   SetSize(0);
 }
+
 
 // Move the first key/value pair to the end of recipient page.
 // The first key is empty, so we set it to middle_key, then move the first item to the destination.
@@ -174,6 +179,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *rec
   std::move(array_ + 1, array_ + GetSize(), array_);
   IncreaseSize(-1);
 }
+
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {

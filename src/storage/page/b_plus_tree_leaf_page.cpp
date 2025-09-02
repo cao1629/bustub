@@ -59,7 +59,7 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) -> const MappingType & { return array_[index]; }
 
 
-// std::lower_bound: the first key that is greater tha or equal to "key"
+// std::lower_bound: the first key that is greater than or equal to "key"
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &keyComparator) const -> int {
   auto target = std::lower_bound(array_, array_ + GetSize(), key,
@@ -70,6 +70,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparato
 }
 
 // Return the new size of this leaf page after insertion.
+// If the key is already in the leaf page, do not insert it again.
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &keyComparator)
     -> int {
@@ -108,7 +109,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   std::copy(items, items + size, array_ + GetSize());
   IncreaseSize(size);
 }
-
 
 // Given a key, find its value
 INDEX_TEMPLATE_ARGUMENTS

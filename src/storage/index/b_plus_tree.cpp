@@ -130,7 +130,7 @@ auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   return true;
 }
 
-// N: InternalPage or LeafPage
+
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 auto BPLUSTREE_TYPE::Split(N *node) -> N * {
@@ -151,7 +151,6 @@ auto BPLUSTREE_TYPE::Split(N *node) -> N * {
     new_leaf->Init(page->GetPageId(), node->GetParentPageId(), leaf_max_size_);
     leaf->MoveHalfTo(new_leaf);
   } else {  // split internal page
-
     auto *internal = reinterpret_cast<InternalPage *>(node);
     auto *new_internal = reinterpret_cast<InternalPage *>(new_node);
 
@@ -161,7 +160,9 @@ auto BPLUSTREE_TYPE::Split(N *node) -> N * {
   return new_node;
 }
 
+
 // After splitting a page, we have old_node and new_node. We need to insert a new entry into their parent.
+// “key” is the first key in new_node.
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                                       Transaction *transaction) {
@@ -200,7 +201,10 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
   }
 
   // parent is full, need to split
-  // Why do we need temporary memory? Because a page cannot save max_size+1 items.
+  // Why do we need temporary memory?
+  // We do insertion before splitting. But a page cannot hold max_size+1 items.
+  // But in leaf page, we do insertion first. Then we check if the size reaches max_size. If GetSize() == max_size.
+  // we split.
   auto *mem = new char[INTERNAL_PAGE_HEADER_SIZE + sizeof(MappingType) * (parent_node->GetSize() + 1)];
   auto *copy_parent_node = reinterpret_cast<InternalPage *>(mem);
   std::memcpy(mem, parent_page->GetData(), INTERNAL_PAGE_HEADER_SIZE + sizeof(MappingType) * (parent_node->GetSize()));
@@ -407,7 +411,6 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node,
     }
   }
 }
-
 
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) -> bool {
