@@ -411,7 +411,7 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node,
     }
   }
 }
-
+`
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) -> bool {
 
