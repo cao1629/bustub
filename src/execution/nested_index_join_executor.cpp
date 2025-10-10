@@ -34,9 +34,15 @@ void NestIndexJoinExecutor::Init() { child_->Init(); }
 auto NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   Tuple left_tuple{};
   RID emit_rid{};
+
   std::vector<Value> vals;
+
   while (child_->Next(&left_tuple, &emit_rid)) {
+
+    // Extract the join key from the left tuple
     Value value = plan_->KeyPredicate()->Evaluate(&left_tuple, child_->GetOutputSchema());
+
+    // Find the matching tuples in the right table using the index. Result is stored in "rids".
     std::vector<RID> rids;
     tree_->ScanKey(Tuple{{value}, index_info_->index_->GetKeySchema()}, &rids, exec_ctx_->GetTransaction());
 
@@ -52,6 +58,9 @@ auto NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       *tuple = Tuple(vals, &GetOutputSchema());
       return true;
     }
+
+    // rids is empty, which means no matching tuple is found in the right table.
+    // If it's a left join, we need to keep the left tuple and pad the right side with NULLs.
     if (plan_->GetJoinType() == JoinType::LEFT) {
       for (uint32_t idx = 0; idx < child_->GetOutputSchema().GetColumnCount(); idx++) {
         vals.push_back(left_tuple.GetValue(&child_->GetOutputSchema(), idx));

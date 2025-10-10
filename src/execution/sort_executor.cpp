@@ -10,10 +10,13 @@ void SortExecutor::Init() {
   child_->Init();
   Tuple child_tuple{};
   RID child_rid;
+
+  // Get all tuples from child and sort them later.
   while (child_->Next(&child_tuple, &child_rid)) {
     child_tuples_.push_back(child_tuple);
   }
 
+  // Sort them.
   std::sort(
       child_tuples_.begin(), child_tuples_.end(),
       [order_bys = plan_->order_bys_, schema = child_->GetOutputSchema()](const Tuple &tuple_a, const Tuple &tuple_b) {
@@ -44,6 +47,8 @@ void SortExecutor::Init() {
         return false;
       });
 
+
+  // We will just need to iterate through the sorted tuples.
   child_iter_ = child_tuples_.begin();
 }
 

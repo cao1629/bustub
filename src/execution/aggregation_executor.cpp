@@ -28,22 +28,33 @@ void AggregationExecutor::Init() {
   child_->Init();
   Tuple tuple{};
   RID rid{};
+
+  // Build the hash table.
   while (child_->Next(&tuple, &rid)) {
     aht_.InsertCombine(MakeAggregateKey(&tuple), MakeAggregateValue(&tuple));
   }
+
   if (aht_.Size() == 0 && GetOutputSchema().GetColumnCount() == 1) {
-    aht_.InsertIntialCombine();
+    aht_.InsertInitialCombine();
   }
+
+  // Initialize the iterator.
   aht_iterator_ = aht_.Begin();
 }
 
+// Here, Next() means next group other than next record. It is like iterating through the hash table.
+// Out parameter "rid" is unused.
 auto AggregationExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   if (aht_iterator_ == aht_.End()) {
     return false;
   }
+
   std::vector<Value> values;
 
+  // Insert all the aggregate keys.
   values.insert(values.end(), aht_iterator_.Key().group_bys_.begin(), aht_iterator_.Key().group_bys_.end());
+
+  // Insert all the aggregate values.
   values.insert(values.end(), aht_iterator_.Val().aggregates_.begin(), aht_iterator_.Val().aggregates_.end());
   *tuple = Tuple{values, &GetOutputSchema()};
   ++aht_iterator_;

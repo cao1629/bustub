@@ -42,13 +42,13 @@ class SimpleAggregationHashTable {
                              const std::vector<AggregationType> &agg_types)
       : agg_exprs_{agg_exprs}, agg_types_{agg_types} {}
 
-  /** @return The initial aggregrate value for this aggregation executor */
+  /** @return The initial aggregate value for this aggregation executor */
   auto GenerateInitialAggregateValue() -> AggregateValue {
     std::vector<Value> values{};
     for (const auto &agg_type : agg_types_) {
       switch (agg_type) {
         case AggregationType::CountStarAggregate:
-          // Count start starts at zero.
+          // Count star starts at zero.
           values.emplace_back(ValueFactory::GetIntegerValue(0));
           break;
         case AggregationType::CountAggregate:
@@ -80,6 +80,7 @@ class SimpleAggregationHashTable {
           if (result->aggregates_[i].IsNull()) {
             result->aggregates_[i] = ValueFactory::GetIntegerValue(0);
           }
+          // We do not count nulls.
           if (!input.aggregates_[i].IsNull()) {
             result->aggregates_[i] = result->aggregates_[i].Add(ValueFactory::GetIntegerValue(1));
           }
@@ -115,13 +116,16 @@ class SimpleAggregationHashTable {
    * @param agg_val the value to be inserted
    */
   void InsertCombine(const AggregateKey &agg_key, const AggregateValue &agg_val) {
+
+    // Insert the key if it does not exist.
     if (ht_.count(agg_key) == 0) {
       ht_.insert({agg_key, GenerateInitialAggregateValue()});
     }
+
     CombineAggregateValues(&ht_[agg_key], agg_val);
   }
 
-  void InsertIntialCombine() { ht_.insert({{std::vector<Value>()}, GenerateInitialAggregateValue()}); }
+  void InsertInitialCombine() { ht_.insert({{std::vector<Value>()}, GenerateInitialAggregateValue()}); }
 
   /**
    * Clear the hash table

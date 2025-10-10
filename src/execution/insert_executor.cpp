@@ -36,7 +36,8 @@ void InsertExecutor::Init() {
   table_indexes_ = exec_ctx_->GetCatalog()->GetTableIndexes(table_info_->name_);
 }
 
-auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
+auto InsertExecutor::
+Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   if (is_end_) {
     return false;
   }

@@ -5,6 +5,8 @@
 
 namespace bustub {
 
+// Condition where we do the optimization: This is a Limit plan and its only child is a Sort plan.
+// How do we do the optimization: Limit + Sort -> TopN. Sort's children become TopN's children.
 auto Optimizer::OptimizeSortLimitAsTopN(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
   // TODO(student): implement sort + limit -> top N optimizer rule
   std::vector<AbstractPlanNodeRef> children;

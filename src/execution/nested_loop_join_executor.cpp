@@ -40,12 +40,15 @@ void NestedLoopJoinExecutor::Init() {
   }
 }
 
+// Emit one joined tuple at a time.
 auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
   RID emit_rid{};
   while (right_tuple_idx_ >= 0 || left_executor_->Next(&left_tuple_, &emit_rid)) {
     std::vector<Value> vals;
+
     for (uint32_t ridx = (right_tuple_idx_ < 0 ? 0 : right_tuple_idx_); ridx < right_tuples_.size(); ridx++) {
       auto &right_tuple = right_tuples_[ridx];
+
       if (Matched(&left_tuple_, &right_tuple)) {
         for (uint32_t idx = 0; idx < left_executor_->GetOutputSchema().GetColumnCount(); idx++) {
           vals.push_back(left_tuple_.GetValue(&left_executor_->GetOutputSchema(), idx));
@@ -58,6 +61,8 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         return true;
       }
     }
+
+    // None of the right tuples match the current left tuple.
     if (right_tuple_idx_ == -1 && plan_->GetJoinType() == JoinType::LEFT) {
       for (uint32_t idx = 0; idx < left_executor_->GetOutputSchema().GetColumnCount(); idx++) {
         vals.push_back(left_tuple_.GetValue(&left_executor_->GetOutputSchema(), idx));
@@ -68,8 +73,10 @@ auto NestedLoopJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       *tuple = Tuple(vals, &GetOutputSchema());
       return true;
     }
+
     right_tuple_idx_ = -1;
   }
+
   return false;
 }
 
